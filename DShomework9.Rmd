@@ -1,0 +1,63 @@
+---
+title: "Homework 9"
+author: "Emma Staut"
+date: "4/13/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Data Tidying
+```{r, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+```
+
+Read in the data as 'av'. Remove the rows without names and create a new data frame called 'av0'. Since Vance Astrovik appears twice in the data, drop this row from the data set.
+```{r}
+av <- read.csv("https://raw.githubusercontent.com/fivethirtyeight/data/master/avengers/avengers.csv", stringsAsFactors = FALSE)
+
+av0 = av %>% filter(Name.Alias != "")
+av0 = av0 %>% filter(Name.Alias != "Vance Astrovik")
+head(av0)
+```
+
+Gather the 5 columns titled 'Death' into one column; store this in a new data frame called 'av1'. Parse out the numerical value from 'Time' and store this as a new variable. Replace all the blank time values with NA. Finally, select the name, time, and death columns from av1.
+```{r}
+av1 = av0 %>% gather(key = Time, value = Death, c(11, 13, 15, 17, 19))
+av1 = av1 %>% mutate(Time = parse_number(Time))
+av1$Death = replace(av1$Death, av1$Death == "", NA)
+av1 = av1 %>% select(Name.Alias, Time, Death)
+head(av1)
+```
+
+Follow the same process as above for 'Return'. Call this data frame 'av2'.
+```{r}
+av2 = av0 %>% gather(key = Time, value = Return, c(12, 14, 16, 18, 20))
+av2 = av2 %>% mutate(Time=parse_number(Time))
+av2$Return = replace(av2$Return, av2$Return == "", NA)
+av2 = av2 %>% select(Name.Alias, Time, Return)
+head(av2)
+```
+
+Join the two data frames into one so we can view Deaths and Returns at once. Call this 'av.neat'.
+```{r}
+av.neat = left_join(av1, av2, by=c('Name.Alias', "Time"))
+head(av.neat)
+```
+
+##Validation
+
+The article claims that there are 89 total deaths and that 57 Avengers make a comeback. 
+```{r}
+av.death = av.neat %>% 
+  filter(Death=="YES")
+av.death %>% dim()
+
+av.return = av.neat %>%
+  filter(Return=="YES")
+av.return %>% dim()
+```
+The data somewhat contradicts this statement, as only 82 Avengers are counted in the deaths and 55 are counted in the returns. This may be due to missing or repeated data in the data set, hence the differences with the article. 
